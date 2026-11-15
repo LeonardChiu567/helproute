@@ -80,10 +80,34 @@ class HelpRoute:
         }
 
 
+def _show(hr, text):
+    r = hr.predict(text)
+    print(f"\n{text[:100]}")
+    print(f"  need: {'YES' if r['is_need'] else 'no'}  (prob {r['need_prob']:.3f}, threshold {r['threshold']:.3f})")
+    if r["is_need"]:
+        print(f"  types: {', '.join(f'{k} {v:.2f}' for k, v in r['types'].items())}")
+        print(f"  evidence: {', '.join(r['evidence'])}")
+    print(f"  crisis: {r['crisis']} {r['crisis_categories'] or ''}  ->  route: {r['route']}")
+
+
 if __name__ == "__main__":
+    # python src/predict.py                 -> type your own posts (blank line or Ctrl+C to quit)
+    # python src/predict.py "your post"     -> one post
+    # python src/predict.py --examples      -> 4 built-in examples
+    import sys
     hr = HelpRoute()
-    for t in ["I got evicted and have nowhere to sleep tonight, landlord changed the locks",
-              "Laid off last month, unemployment ran out and I can't pay PG&E, shutoff notice came",
-              "What's the best budgeting app for a family of four?",
-              "I want to end it all, I can't go on like this"]:
-        print(t[:60], "->", hr.predict(t))
+    if sys.argv[1:] == ["--examples"]:
+        for t in ["I got evicted and have nowhere to sleep tonight, landlord changed the locks",
+                  "Laid off last month, unemployment ran out and I can't pay PG&E, shutoff notice came",
+                  "What's the best budgeting app for a family of four?",
+                  "I want to end it all, I can't go on like this"]:
+            _show(hr, t)
+    elif sys.argv[1:]:
+        _show(hr, " ".join(sys.argv[1:]))
+    else:
+        print("Type a post and press Enter (blank line to quit).")
+        try:
+            while (t := input("\n> ").strip()):
+                _show(hr, t)
+        except (KeyboardInterrupt, EOFError):
+            pass
